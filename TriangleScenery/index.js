@@ -42,12 +42,6 @@ gl.enable(gl.DEPTH_TEST);
 gl.clear(gl.COLOR_BUFFER_BIT);
 
 
-// makeTriangle(gl, verticies, color);
-// makeTriangle(gl, triangle2, color2);
-
-// moveTriangle(gl, verticies, 1.0, 0.0, color);
-
-
 // Doors -----------------------------------
 
 let doorSize = 0.4;
@@ -58,6 +52,8 @@ makeRectangle(gl, 0.1, -0.6, doorSize/2, doorColor, doorSize);
 makeRectangle(gl, 0.65, -0.6, doorSize/2, doorColor, doorSize);
 
 makeRectangle(gl, -0.45, -0.6, doorSize/2, doorColor, doorSize);
+
+// ------------------------------------------
 
 
 // Brick ----------------------------------------
@@ -299,10 +295,12 @@ makeSquare(gl, -1.0, 2.0, 2.0, skyColor);
 // -----------------------------------------
 
 
+// clouds ----------------------------------
+
+let cloudColor = [0.6431, 0.6431, 0.6431, 1.0]
 
 
-
-
+// -----------------------------------------
 
 
 
