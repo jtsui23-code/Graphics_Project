@@ -30,6 +30,7 @@ let roofColor = [1.0, 0.51764, 0.5529411, 0.72];
 let color = [0.6431, 0.6431, 0.6431, 1.0];
 let brickSize = 0.15;
 
+
 // let color2 = [0.2, 0.0, 0.75, 1.0]
 
 // console.log(rotateTriangle(verticies));
@@ -45,6 +46,18 @@ gl.clear(gl.COLOR_BUFFER_BIT);
 // makeTriangle(gl, triangle2, color2);
 
 // moveTriangle(gl, verticies, 1.0, 0.0, color);
+
+
+// Doors -----------------------------------
+
+let doorSize = 0.4;
+let doorColor = [0.0, 0.0, 0.0, 1.0]
+
+makeRectangle(gl, 0.1, -0.6, doorSize/2, doorColor, doorSize);
+
+makeRectangle(gl, 0.65, -0.6, doorSize/2, doorColor, doorSize);
+
+makeRectangle(gl, -0.45, -0.6, doorSize/2, doorColor, doorSize);
 
 
 // Brick ----------------------------------------
@@ -246,37 +259,6 @@ for (let i = 0; i < 10; i++){
 }
 
 
-
-
-
-// makeRectangle(gl, -0.50, -0.06, brickSize, brickColor);
-// makeRectangle(gl, -0.50, -0.29, brickSize, brickColor);
-
-// makeRectangle(gl, -0.18, -0.06, brickSize, brickColor);
-// makeRectangle(gl, -0.18, -0.29, brickSize, brickColor);
-
-
-// makeRectangle(gl, 0.05, -0.06, brickSize, brickColor);
-// makeRectangle(gl, 0.05, -0.29, brickSize, brickColor);
-
-// makeRectangle(gl, -0.18, -0.52, brickSize, brickColor);
-// makeRectangle(gl, -0.18, -0.52, brickSize, brickColor);
-
-// makeRectangle(gl, -0.18, -0.75, brickSize, brickColor);
-
-
-// makeRectangle(gl, 0.37, -0.06, brickSize, brickColor);
-// makeRectangle(gl, 0.37, -0.29, brickSize, brickColor);
-
-// makeRectangle(gl, 0.37, -0.52, brickSize, brickColor);
-// makeRectangle(gl, 0.37, -0.75, brickSize, brickColor);
-
-// makeRectangle(gl, 0.67, -0.28, brickSize, brickColor);
-// makeRectangle(gl, 0.67, -0.056, brickSize, brickColor);
-
-
-
-
 // ----------------------------------------------
 
 // Gray broder -----------------------
@@ -310,7 +292,15 @@ makeTriangle(gl, roof, roofColor)
 
 
 // Sky -------------------------------------
+
 makeSquare(gl, -1.0, 2.0, 2.0, skyColor);
+
+
+// -----------------------------------------
+
+
+
+
 
 
 
