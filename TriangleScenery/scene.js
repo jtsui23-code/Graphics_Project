@@ -22,13 +22,16 @@ let roof = [
 
 let skyColor = [0.396, 0.6901, 1.0 ,1.0]
 let brickColor = [1.0, 0.91372, 0.65882, 1.0];
+let doorColor = [0.0, 0.0, 0.0, 1.0]
 
 let brickColor2 = [1.0, 0.435294, 0.38039, 1.0];
-
 let roofColor = [1.0, 0.51764, 0.5529411, 0.72];
 
+
 let color = [0.6431, 0.6431, 0.6431, 1.0];
+
 let brickSize = 0.15;
+let doorSize = 0.4;
 
 
 // let color2 = [0.2, 0.0, 0.75, 1.0]
@@ -44,8 +47,7 @@ gl.clear(gl.COLOR_BUFFER_BIT);
 
 // Doors -----------------------------------
 
-let doorSize = 0.4;
-let doorColor = [0.0, 0.0, 0.0, 1.0]
+
 
 makeRectangle(gl, 0.1, -0.6, doorSize/2, doorColor, doorSize);
 
@@ -295,12 +297,6 @@ makeSquare(gl, -1.0, 2.0, 2.0, skyColor);
 // -----------------------------------------
 
 
-// clouds ----------------------------------
-
-let cloudColor = [0.6431, 0.6431, 0.6431, 1.0]
-
-
-// -----------------------------------------
 
 
 
