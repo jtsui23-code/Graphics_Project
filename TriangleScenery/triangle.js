@@ -14,9 +14,8 @@ let verticies = [
 firstTriangleColor = [1.0, 0.0, 0.0, 1.0];
 secondTriangleColor = [0.0, 0.0, 1.0, 1.0];
 
-makeTriangle(gl, verticies, firstTriangleColor);
 
 rotatedVerticies = rotateTriangle(verticies);
+makeTriangle(gl, verticies, firstTriangleColor);
 
-moveTriangle()
 makeTriangle(gl, rotatedVerticies, secondTriangleColor);
