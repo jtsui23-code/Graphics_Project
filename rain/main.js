@@ -49,6 +49,56 @@ const vertices = new Float32Array([
      0.5, -0.5, 0.0, 1.0,  // Bottom-right
 ]);
 
+// const vertices = new Float32Array([
+//     // Front face
+//     -0.5, -0.5,  0.5, 1.0,
+//      0.5, -0.5,  0.5, 1.0,
+//      0.5,  0.5,  0.5, 1.0,
+//     -0.5, -0.5,  0.5, 1.0,
+//      0.5,  0.5,  0.5, 1.0,
+//     -0.5,  0.5,  0.5, 1.0,
+    
+//     // Back face
+//     -0.5, -0.5, -0.5, 1.0,
+//     -0.5,  0.5, -0.5, 1.0,
+//      0.5,  0.5, -0.5, 1.0,
+//     -0.5, -0.5, -0.5, 1.0,
+//      0.5,  0.5, -0.5, 1.0,
+//      0.5, -0.5, -0.5, 1.0,
+    
+//     // Top face
+//     -0.5,  0.5, -0.5, 1.0,
+//     -0.5,  0.5,  0.5, 1.0,
+//      0.5,  0.5,  0.5, 1.0,
+//     -0.5,  0.5, -0.5, 1.0,
+//      0.5,  0.5,  0.5, 1.0,
+//      0.5,  0.5, -0.5, 1.0,
+    
+//     // Bottom face
+//     -0.5, -0.5, -0.5, 1.0,
+//      0.5, -0.5, -0.5, 1.0,
+//      0.5, -0.5,  0.5, 1.0,
+//     -0.5, -0.5, -0.5, 1.0,
+//      0.5, -0.5,  0.5, 1.0,
+//     -0.5, -0.5,  0.5, 1.0,
+    
+//     // Right face
+//      0.5, -0.5, -0.5, 1.0,
+//      0.5,  0.5, -0.5, 1.0,
+//      0.5,  0.5,  0.5, 1.0,
+//      0.5, -0.5, -0.5, 1.0,
+//      0.5,  0.5,  0.5, 1.0,
+//      0.5, -0.5,  0.5, 1.0,
+    
+//     // Left face
+//     -0.5, -0.5, -0.5, 1.0,
+//     -0.5, -0.5,  0.5, 1.0,
+//     -0.5,  0.5,  0.5, 1.0,
+//     -0.5, -0.5, -0.5, 1.0,
+//     -0.5,  0.5,  0.5, 1.0,
+//     -0.5,  0.5, -0.5, 1.0
+// ]);
+
 
 
 
@@ -80,14 +130,11 @@ for (let i = 0; i < rainDrop; i++) {
     translateX[i] = getDelta(-1, 1);     // random X position
     posY[i] = getDelta(0.5, 1.0);        // start between middle and top
     speed[i] = getDelta(0.005, 0.02);    // random fall speed
-    scale[i] = getDelta(0.01, 0.03);     // random size
+    scale[i] = getDelta(0.01, 0.04);     // random size
 
     angle[i] = getDelta(0, 360) * (Math.PI/180);
     angleSpeed[i] = getDelta(0, 0.10);
 }
-
-
-y = 1;
 
 
 
@@ -111,10 +158,7 @@ function render() {
         console.log(model);
 
         // gl.uniformMatrix4fv(matrixUniformLocation, false, model);
-        // gl.drawArrays(gl.TRIANGLE_STRIP, 0, 6); // Draw square (2 triangles)
-
-        translationVector = [getDelta(0, 0), getDelta(0, -.5), getDelta(0, 0)]
-        
+        // gl.drawArrays(gl.TRIANGLE_STRIP, 0, 6); // Draw square (2 triangles)        
 
 
          if (posY[i] < -1.2) {
@@ -124,22 +168,30 @@ function render() {
         }
 
         mat4.translate(model, model, [translateX[i], posY[i], 0]);
-
-        posY[i] -= speed[i];
-
-
         mat4.scale(model, model, [scale[i], scale[i], 1]);
-        
-        
         mat4.rotateZ(model, model, angle[i]);
 
-        angle[i] += angleSpeed[i];
-
-
+        
         // update the transformation matrix
         // Send the updated rotation matrix to the shader
         gl.uniformMatrix4fv(matrixUniformLocation, false, model);
         gl.drawArrays(gl.TRIANGLE_STRIP, 0, 6); // Draw square (2 triangles)
+
+
+        for (let j = 0; j < 4; j++) {
+            var model = mat4.create();
+            mat4.translate(model, model, [translateX[i], posY[i], 0]);
+            mat4.scale(model, model, [scale[i], scale[i], 1]);
+            mat4.rotateZ(model, model, angle[i] + (j * Math.PI / 4)); // 0°, 45°, 90°, 135°
+            
+            gl.uniformMatrix4fv(matrixUniformLocation, false, model);
+            gl.drawArrays(gl.TRIANGLE_STRIP, 0, 6);
+        }
+
+
+        posY[i] -= speed[i];
+        angle[i] += angleSpeed[i];
+
 
 
     }
