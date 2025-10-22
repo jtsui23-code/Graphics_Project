@@ -1,7 +1,14 @@
+// Jack Tsui
+// Intro Computer Graphics
+// Graphic Assignment 2
+// Renders snowflakes falling
+
 let mat4 = glMatrix.mat4;
+
 // Get WebGL context
 const canvas = document.getElementById('webglCanvas');
 const gl = canvas.getContext('webgl');
+
 
 function getDelta(min, max) {
   return Math.random() * (max - min) + min;
@@ -130,7 +137,7 @@ for (let i = 0; i < rainDrop; i++) {
     translateX[i] = getDelta(-1, 1);     // random X position
     posY[i] = getDelta(0.5, 1.0);        // start between middle and top
     speed[i] = getDelta(0.005, 0.02);    // random fall speed
-    scale[i] = getDelta(0.01, 0.04);     // random size
+    scale[i] = getDelta(0.03, 0.06);     // random size
 
     angle[i] = getDelta(0, 360) * (Math.PI/180);
     angleSpeed[i] = getDelta(0, 0.10);
@@ -146,8 +153,6 @@ function render() {
 
     // gl.clear(gl.COLOR_BUFFER_BIT | gl.DEPTH_BUFFER_BIT);
 
-
-   
 
     for (let i = 0; i < rainDrop; i ++)
     {
