@@ -20,7 +20,7 @@ var projectionLoc;
 var modelViewLoc;
 var speed = 2.0;
 
-init("cube");
+init("dodecahedron");
 
 function init(picture)
 {
@@ -279,13 +279,10 @@ function drawDodecahedron() {
     ];
     
     function addPentagon(a, b, c, d, e, colorIndex) {
-        // positions.push(vertices[a]); positions.push(vertices[b]); positions.push(vertices[c]);
-        // positions.push(vertices[a]); positions.push(vertices[c]); positions.push(vertices[d]);
-        // positions.push(vertices[a]); positions.push(vertices[d]); positions.push(vertices[e]);
+        positions.push(vertices[a]); positions.push(vertices[b]); positions.push(vertices[c]);
+        positions.push(vertices[a]); positions.push(vertices[c]); positions.push(vertices[d]);
+        positions.push(vertices[a]); positions.push(vertices[d]); positions.push(vertices[e]);
         
-        positions.push(vertices[a]); positions.push(vertices[c]); positions.push(vertices[b]);
-        positions.push(vertices[a]); positions.push(vertices[d]); positions.push(vertices[c]);
-        positions.push(vertices[a]); positions.push(vertices[e]); positions.push(vertices[d]);
         for (var i = 0; i < 9; i++) colors.push(faceColors[colorIndex]);
     }
     
