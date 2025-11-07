@@ -257,19 +257,38 @@ function drawDodecahedron() {
     var positions = [];
     var colors = [];
     
-    var phi = (1.0 + Math.sqrt(5.0)) / 2.0;
-    var b = 1.0 / phi;
-    var c = 2.0 - phi;
+    var phi = (1.0 + Math.sqrt(5.0)) / 2.0;  // Golden ratio ≈ 1.618
+    var a = 1.0;
+    var b = 1.0 / phi;  // ≈ 0.618
     
+    // Standard dodecahedron vertices (20 vertices)
     var vertices = [
-        vec4( c,  0,  1, 1.0), vec4(-c,  0,  1, 1.0), vec4(-c,  0, -1, 1.0), vec4( c,  0, -1, 1.0),
-        vec4( 0,  1,  c, 1.0), vec4( 0,  1, -c, 1.0), vec4( 0, -1, -c, 1.0), vec4( 0, -1,  c, 1.0),
-        vec4( 1,  c,  0, 1.0), vec4(-1,  c,  0, 1.0), vec4(-1, -c,  0, 1.0), vec4( 1, -c,  0, 1.0),
-        vec4( b,  b,  b, 1.0), vec4(-b,  b,  b, 1.0), vec4(-b,  b, -b, 1.0), vec4( b,  b, -b, 1.0),
-        vec4( b, -b,  b, 1.0), vec4(-b, -b,  b, 1.0), vec4(-b, -b, -b, 1.0), vec4( b, -b, -b, 1.0)
+        // 8 vertices at cube corners (±1, ±1, ±1)
+        vec4( a,  a,  a, 1.0),   // 0
+        vec4( a,  a, -a, 1.0),   // 1
+        vec4( a, -a,  a, 1.0),   // 2
+        vec4( a, -a, -a, 1.0),   // 3
+        vec4(-a,  a,  a, 1.0),   // 4
+        vec4(-a,  a, -a, 1.0),   // 5
+        vec4(-a, -a,  a, 1.0),   // 6
+        vec4(-a, -a, -a, 1.0),   // 7
+        
+        // 12 vertices at (0, ±1/φ, ±φ) and cyclic permutations
+        vec4( 0,  b,  phi, 1.0), // 8
+        vec4( 0,  b, -phi, 1.0), // 9
+        vec4( 0, -b,  phi, 1.0), // 10
+        vec4( 0, -b, -phi, 1.0), // 11
+        
+        vec4( b,  phi,  0, 1.0), // 12
+        vec4( b, -phi,  0, 1.0), // 13
+        vec4(-b,  phi,  0, 1.0), // 14
+        vec4(-b, -phi,  0, 1.0), // 15
+        
+        vec4( phi,  0,  b, 1.0), // 16
+        vec4( phi,  0, -b, 1.0), // 17
+        vec4(-phi,  0,  b, 1.0), // 18
+        vec4(-phi,  0, -b, 1.0)  // 19
     ];
-
-    
     
     var faceColors = [
         vec4(1.0, 0.0, 0.0, 1.0), vec4(0.0, 1.0, 0.0, 1.0), vec4(0.0, 0.0, 1.0, 1.0),
@@ -279,6 +298,7 @@ function drawDodecahedron() {
     ];
     
     function addPentagon(a, b, c, d, e, colorIndex) {
+        // Triangulate pentagon into 3 triangles from vertex a
         positions.push(vertices[a]); positions.push(vertices[b]); positions.push(vertices[c]);
         positions.push(vertices[a]); positions.push(vertices[c]); positions.push(vertices[d]);
         positions.push(vertices[a]); positions.push(vertices[d]); positions.push(vertices[e]);
@@ -286,21 +306,23 @@ function drawDodecahedron() {
         for (var i = 0; i < 9; i++) colors.push(faceColors[colorIndex]);
     }
     
-    addPentagon(0, 16, 7, 4, 12, 0);
-    addPentagon(0, 12, 8, 3, 11, 1);
-    addPentagon(0, 11, 19, 6, 16, 2);
-    addPentagon(1, 13, 4, 7, 17, 3);
-    addPentagon(1, 17, 10, 2, 9, 4);
-    addPentagon(1, 9, 14, 5, 13, 5);
-    addPentagon(2, 10, 18, 6, 19, 6);
-    addPentagon(2, 19, 11, 3, 15, 7);
-    addPentagon(2, 15, 5, 14, 18, 8);
-    addPentagon(3, 8, 12, 4, 13, 9);
-    addPentagon(3, 13, 5, 15, 8, 10);
-    addPentagon(6, 18, 10, 17, 7, 11);
+    // 12 pentagonal faces with correct vertex ordering
+    addPentagon(0, 16, 2, 10, 8, 0);    // Face 1
+    addPentagon(0, 8, 4, 14, 12, 1);    // Face 2
+    addPentagon(0, 12, 1, 17, 16, 2);   // Face 3
+    addPentagon(8, 10, 6, 18, 4, 3);    // Face 4
+    addPentagon(12, 14, 5, 9, 1, 4);    // Face 5
+    addPentagon(16, 17, 3, 13, 2, 5);   // Face 6
+    addPentagon(6, 10, 2, 13, 15, 6);   // Face 7
+    addPentagon(4, 18, 19, 5, 14, 7);   // Face 8
+    addPentagon(1, 9, 11, 3, 17, 8);    // Face 9
+    addPentagon(7, 15, 13, 3, 11, 9);   // Face 10
+    addPentagon(7, 11, 9, 5, 19, 10);   // Face 11
+    addPentagon(15, 7, 19, 18, 6, 11);  // Face 12
     
     return { positions: positions, colors: colors, numVertices: positions.length };
 }
+
 
 // DrawIcosahedron - Creates a regular icosahedron (20 triangular faces)
 function drawIcosahedron() {
