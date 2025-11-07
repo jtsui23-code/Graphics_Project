@@ -12,7 +12,7 @@ var xAxis = 0;
 var yAxis = 1;
 var zAxis = 2;
 
-var axis = 0;
+var axis = 1;
 var theta = [0, 0, 0];
 
 var thetaLoc;
@@ -20,40 +20,36 @@ var projectionLoc;
 var modelViewLoc;
 var speed = 2.0;
 
-init("dodecahedron");
+init();
 
-function init(picture)
+function init()
 {
     canvas = document.getElementById("gl-canvas");
 
     gl = canvas.getContext('webgl2');
     if (!gl) alert("WebGL 2.0 isn't available");
 
-    // Choose which shape to draw
-    var shape = 0;
-    
-    if (picture == "tetrahedron"){
-        shape = drawTetrahedron();
-    }
-    else if (picture == "cube") {
-        shape = drawCube();
-    }
-    else if (picture == "octahedron") {
-        shape = drawOctahedron();
-    }
-    else if (picture == "dodecahedron") {
-        shape = drawDodecahedron();
-    }
-    else if (picture == "icosahedron") {
-        shape = drawIcosahedron();
-    }
-    else if (picture == "sphere") {
-        shape = drawSphere(3);
-    }
-    
-    positions = shape.positions;
-    colors = shape.colors;
-    numPositions = shape.numVertices;
+
+    var handle = createMaceHandle(8);
+    var maceHead = drawIcosahedron()
+    var s = 0.5
+
+    var translatedMaceHead = maceHead.positions.map(function(p){
+    return vec4(p[0] * s +1, p[1] * s, p[2] * s, p[3]);
+
+    });
+
+
+
+
+
+    positions = [...translatedMaceHead,...handle.positions];
+    colors = [...maceHead.colors,...handle.colors];
+    numPositions = positions.length;
+
+
+
+
 
     gl.viewport(0, 0, canvas.width, canvas.height);
     gl.clearColor(1.0, 1.0, 1.0, 1.0);
@@ -120,6 +116,32 @@ function init(picture)
     };
 
     render();
+}
+
+function createMaceHandle(numSegments) {
+    var allPositions = [];
+    var allColors = [];
+    
+    var segmentSize = 0.35;  // Size of each cube segment
+    var spacing = 0.35;      // Space between segments
+    
+    for (var i = 0; i < numSegments; i++) {
+        var cube = drawCube();
+        
+        // Calculate x offset for this segment
+        var xOffset = (i * spacing) - ((numSegments - 1) * spacing / 2);
+        
+        // Transform each position in the cube
+        var translatedCube = cube.positions.map(p => 
+            vec4(p[0] * segmentSize + xOffset, p[1] * segmentSize, p[2] * segmentSize, p[3])
+        );
+        
+        // Add to combined arrays
+        allPositions.push(...translatedCube);
+        allColors.push(...cube.colors);
+    }
+    
+    return { positions: allPositions, colors: allColors };
 }
 
 // DrawCube - Creates a cube centered at origin
