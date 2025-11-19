@@ -7,49 +7,92 @@ var numPositions;
 
 var positions = [];
 var colors = [];
+var normals = [];
 
 var xAxis = 0;
 var yAxis = 1;
 var zAxis = 2;
 
-var axis = 1;
+var axis = 0;
 var theta = [0, 0, 0];
 
 var thetaLoc;
 var projectionLoc;
 var modelViewLoc;
-var speed = 2.0;
+var speed = 2.0; // Initial speed is still 2.0
+var animFrameId = null;
+var handlersAdded = false;
 
-init();
+// Material properties for Brass (k_a, k_d, k_s, alpha)
+var brassMaterial = {
+    ambient: vec3(0.33, 0.22, 0.03),
+    diffuse: vec3(0.78, 0.57, 0.11),
+    specular: vec3(0.99, 0.94, 0.81),
+    shininess: 27.8
+};
 
-function init()
+// Initial shape for Part I is the cube
+init("cube");
+
+function init(picture)
 {
     canvas = document.getElementById("gl-canvas");
 
     gl = canvas.getContext('webgl2');
     if (!gl) alert("WebGL 2.0 isn't available");
 
+    // Choose which shape to draw
+    var shape = { positions: [], colors: [], numVertices: 0 };
+    
+    if (picture == "tetrahedron"){
+        shape = drawTetrahedron();
+    }
+    else if (picture == "cube") {
+        shape = drawCube();
+    }
+    else if (picture == "octahedron") {
+        shape = drawOctahedron();
+    }
+    else if (picture == "icosahedron") {
+        shape = drawIcosahedron();
+    }
+    else if (picture == "dodecahedron") {
+        shape = drawDodecahedron();
+    }
+    else if (picture == "sphere") {
+        shape = drawSphere(3);
+    }
+    
+    positions = shape.positions;
+    colors = shape.colors;
+    numPositions = shape.numVertices;
 
-    var handle = createMaceHandle(8);
-    var maceHead = drawIcosahedron()
-    var s = 0.5
+    // Compute per-triangle normals (flat shading)
+    function subtractVec(a, b) {
+        return [a[0]-b[0], a[1]-b[1], a[2]-b[2]];
+    }
+    function crossVec(a, b) {
+        return [a[1]*b[2] - a[2]*b[1], a[2]*b[0] - a[0]*b[2], a[0]*b[1] - a[1]*b[0]];
+    }
+    function normalizeVec(v) {
+        var len = Math.sqrt(v[0]*v[0] + v[1]*v[1] + v[2]*v[2]);
+        if (len === 0) return [0,0,0];
+        return [v[0]/len, v[1]/len, v[2]/len];
+    }
 
-    var translatedMaceHead = maceHead.positions.map(function(p){
-    return vec4(p[0] * s +1, p[1] * s, p[2] * s, p[3]);
-
-    });
-
-
-
-
-
-    positions = [...translatedMaceHead,...handle.positions];
-    colors = [...maceHead.colors,...handle.colors];
-    numPositions = positions.length;
-
-
-
-
+    normals = [];
+    for (var i = 0; i < positions.length; i += 3) {
+        var p1 = positions[i];
+        var p2 = positions[i+1];
+        var p3 = positions[i+2];
+        var v1 = subtractVec(p2, p1);
+        var v2 = subtractVec(p3, p1);
+        var n = normalizeVec(crossVec(v1, v2));
+        // push same normal for the three vertices of the triangle
+        normals.push(vec3(n[0], n[1], n[2]));
+        normals.push(vec3(n[0], n[1], n[2]));
+        normals.push(vec3(n[0], n[1], n[2]));
+    }
 
     gl.viewport(0, 0, canvas.width, canvas.height);
     gl.clearColor(1.0, 1.0, 1.0, 1.0);
@@ -63,6 +106,7 @@ function init()
     var program = initShaders(gl, "vertex-shader", "fragment-shader");
     gl.useProgram(program);
 
+    // Color buffer (kept for compatibility, but the shader uses material properties)
     var cBuffer = gl.createBuffer();
     gl.bindBuffer(gl.ARRAY_BUFFER, cBuffer);
     gl.bufferData(gl.ARRAY_BUFFER, flatten(colors), gl.STATIC_DRAW);
@@ -78,70 +122,106 @@ function init()
     var positionLoc = gl.getAttribLocation(program, "aPosition");
     gl.vertexAttribPointer(positionLoc, 4, gl.FLOAT, false, 0, 0);
     gl.enableVertexAttribArray(positionLoc);
-
-    thetaLoc = gl.getUniformLocation(program, "uTheta");
     
-    // Set up projection matrix (perspective view)
+    // Normal Buffer (New)
+    var nBuffer = gl.createBuffer();
+    gl.bindBuffer(gl.ARRAY_BUFFER, nBuffer);
+    gl.bufferData(gl.ARRAY_BUFFER, flatten(normals), gl.STATIC_DRAW);
+
+    var normalLoc = gl.getAttribLocation(program, "aNormal");
+    gl.vertexAttribPointer(normalLoc, 3, gl.FLOAT, false, 0, 0);
+    gl.enableVertexAttribArray(normalLoc);
+    
+    // Get uniform locations (New/Updated)
+    thetaLoc = gl.getUniformLocation(program, "uTheta");
+    modelViewLoc = gl.getUniformLocation(program, "uModelView");
     projectionLoc = gl.getUniformLocation(program, "uProjection");
-    var aspect = canvas.width / canvas.height;
-    var projection = perspective(45.0, aspect, 0.1, 100.0);
+    
+    // Set up projection and modelView matrices (Assuming common setup)
+    var modelView = lookAt(vec3(0, 0, 3.0), vec3(0, 0, 0), vec3(0, 1, 0));
+    var projection = perspective(45, canvas.width/canvas.height, 0.1, 10.0);
+    gl.uniformMatrix4fv(modelViewLoc, false, flatten(modelView));
     gl.uniformMatrix4fv(projectionLoc, false, flatten(projection));
     
-    // Set up modelview matrix (move camera back)
-    modelViewLoc = gl.getUniformLocation(program, "uModelView");
-    var modelView = lookAt(vec3(0, 0, 5), vec3(0, 0, 0), vec3(0, 1, 0));
-    gl.uniformMatrix4fv(modelViewLoc, false, flatten(modelView));
-
-    //event listeners for buttons
-
-    document.getElementById( "xButton" ).onclick = function () {
-        axis = xAxis;
-        speed = 2.0;
-    };
-    document.getElementById( "yButton" ).onclick = function () {
-        axis = yAxis;
-        speed = 2.0;
-
-    };
-    document.getElementById( "zButton" ).onclick = function () {
-        axis = zAxis;
-        speed = 2.0;
-
-    };
-
-     document.getElementById( "stop" ).onclick = function () {
-        axis = zAxis;
-        speed = 0.0;
-
-    };
-
-    render();
-}
-
-function createMaceHandle(numSegments) {
-    var allPositions = [];
-    var allColors = [];
+    // Set up lighting uniforms (New)
+    gl.uniform3fv(gl.getUniformLocation(program, "uLightPosition"), vec3(0.0, 1.0, 2.0));
+    gl.uniform3fv(gl.getUniformLocation(program, "uAmbient"), vec3(0.2, 0.2, 0.2));
+    gl.uniform3fv(gl.getUniformLocation(program, "uDiffuse"), vec3(1.0, 1.0, 1.0));
+    gl.uniform3fv(gl.getUniformLocation(program, "uSpecular"), vec3(1.0, 1.0, 1.0));
     
-    var segmentSize = 0.35;  // Size of each cube segment
-    var spacing = 0.35;      // Space between segments
-    
-    for (var i = 0; i < numSegments; i++) {
-        var cube = drawCube();
-        
-        // Calculate x offset for this segment
-        var xOffset = (i * spacing) - ((numSegments - 1) * spacing / 2);
-        
-        // Transform each position in the cube
-        var translatedCube = cube.positions.map(p => 
-            vec4(p[0] * segmentSize + xOffset, p[1] * segmentSize, p[2] * segmentSize, p[3])
-        );
-        
-        // Add to combined arrays
-        allPositions.push(...translatedCube);
-        allColors.push(...cube.colors);
+    // Set material uniforms (New)
+    gl.uniform3fv(gl.getUniformLocation(program, "uMaterialAmbient"), brassMaterial.ambient);
+    gl.uniform3fv(gl.getUniformLocation(program, "uMaterialDiffuse"), brassMaterial.diffuse);
+    gl.uniform3fv(gl.getUniformLocation(program, "uMaterialSpecular"), brassMaterial.specular);
+    gl.uniform1f(gl.getUniformLocation(program, "uMaterialShininess"), brassMaterial.shininess);
+
+
+    // --- Event Listeners (add only once) ---
+    if (!handlersAdded) {
+        // Buttons for Rotation
+        document.getElementById( "xButton" ).onclick = function () {
+            axis = xAxis;
+            // Removed: speed = 2.0; -> Retains current speed
+        };
+        document.getElementById( "yButton" ).onclick = function () {
+            axis = yAxis;
+            // Removed: speed = 2.0; -> Retains current speed
+        };
+        document.getElementById( "zButton" ).onclick = function () {
+            axis = zAxis;
+            // Removed: speed = 2.0; -> Retains current speed
+        };
+
+        document.getElementById( "stop" ).onclick = function () {
+            speed = 0.0;
+        };
+
+        // Keyboard for Shape Selection (Part III)
+        // Use modern key handling and log events for debugging
+        document.addEventListener('keydown', function(event) {
+            console.log('keydown event:', event.key, event.keyCode);
+            var key = event.key; // '1', '2', '3', '4' expected
+            switch(key) {
+                case '1':
+                    console.log('Switching to tetrahedron');
+                    init("tetrahedron");
+                    break;
+                case '2':
+                    console.log('Switching to cube');
+                    init("cube");
+                    break;
+                case '3':
+                    console.log('Switching to octahedron');
+                    init("octahedron");
+                    break;
+                case '4':
+                    console.log('Switching to icosahedron');
+                    init("icosahedron"); 
+                    break;
+                case '5':
+                    console.log('Switching to dodecahedron');
+                    init("dodecahedron");
+                    break;
+                case '6':
+                    console.log('Switching to sphere');
+                    init("sphere");
+                    break;
+                case '0':
+                    console.log('Switching to all shapes');
+                    init("all");
+                    break;
+            }
+        });
+
+        handlersAdded = true;
     }
-    
-    return { positions: allPositions, colors: allColors };
+
+    // Start the render loop, but cancel any previous animation to avoid duplicates
+    if (animFrameId) {
+        cancelAnimationFrame(animFrameId);
+        animFrameId = null;
+    }
+    render();
 }
 
 // DrawCube - Creates a cube centered at origin
@@ -160,13 +240,10 @@ function drawCube() {
         vec4( 0.5, -0.5, -0.5, 1.0)   // 7
     ];
     
+    // Face colors are not used for Phong shading but kept for buffer creation
     var faceColors = [
-        vec4(1.0, 0.0, 0.0, 1.0),  // red
-        vec4(0.0, 1.0, 0.0, 1.0),  // green
-        vec4(0.0, 0.0, 1.0, 1.0),  // blue
-        vec4(1.0, 1.0, 0.0, 1.0),  // yellow
-        vec4(1.0, 0.0, 1.0, 1.0),  // magenta
-        vec4(0.0, 1.0, 1.0, 1.0)   // cyan
+        vec4(1.0, 0.0, 0.0, 1.0), vec4(0.0, 1.0, 0.0, 1.0), vec4(0.0, 0.0, 1.0, 1.0),
+        vec4(1.0, 1.0, 0.0, 1.0), vec4(1.0, 0.0, 1.0, 1.0), vec4(0.0, 1.0, 1.0, 1.0)
     ];
     
     function addQuad(a, b, c, d, colorIndex) {
@@ -202,10 +279,8 @@ function drawTetrahedron() {
     ];
     
     var faceColors = [
-        vec4(1.0, 0.0, 0.0, 1.0),  // red
-        vec4(0.0, 1.0, 0.0, 1.0),  // green
-        vec4(0.0, 0.0, 1.0, 1.0),  // blue
-        vec4(1.0, 1.0, 0.0, 1.0)   // yellow
+        vec4(1.0, 0.0, 0.0, 1.0), vec4(0.0, 1.0, 0.0, 1.0), 
+        vec4(0.0, 0.0, 1.0, 1.0), vec4(1.0, 1.0, 0.0, 1.0)
     ];
     
     function addTriangle(a, b, c, colorIndex) {
@@ -240,14 +315,9 @@ function drawOctahedron() {
     ];
     
     var faceColors = [
-        vec4(1.0, 0.0, 0.0, 1.0),  // red
-        vec4(0.0, 1.0, 0.0, 1.0),  // green
-        vec4(0.0, 0.0, 1.0, 1.0),  // blue
-        vec4(1.0, 1.0, 0.0, 1.0),  // yellow
-        vec4(1.0, 0.0, 1.0, 1.0),  // magenta
-        vec4(0.0, 1.0, 1.0, 1.0),  // cyan
-        vec4(1.0, 0.5, 0.0, 1.0),  // orange
-        vec4(0.5, 0.0, 0.5, 1.0)   // purple
+        vec4(1.0, 0.0, 0.0, 1.0), vec4(0.0, 1.0, 0.0, 1.0), vec4(0.0, 0.0, 1.0, 1.0),
+        vec4(1.0, 1.0, 0.0, 1.0), vec4(1.0, 0.0, 1.0, 1.0), vec4(0.0, 1.0, 1.0, 1.0),
+        vec4(1.0, 0.5, 0.0, 1.0), vec4(0.5, 0.0, 0.5, 1.0)
     ];
     
     function addTriangle(a, b, c, colorIndex) {
@@ -476,5 +546,5 @@ function render()
     gl.uniform3fv(thetaLoc, theta);
 
     gl.drawArrays(gl.TRIANGLES, 0, numPositions);
-    requestAnimationFrame(render);
+    animFrameId = requestAnimationFrame(render);
 }

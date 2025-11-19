@@ -1,0 +1,118 @@
+<!DOCTYPE html>
+<html>
+
+<body>
+<canvas id="gl-canvas" width="512" height="512"> </canvas>
+
+<button id="stop">Stop</button>
+<button id= "xButton">Rotate X</button>
+<button id= "yButton">Rotate Y</button>
+<button id= "zButton">Rotate Z</button>
+<p>Press 1 for Tetrahedron, 2 for Cube, 3 for Octahedron, 4 for Icosahedron</p>
+
+<script id="vertex-shader" type="x-shader/x-vertex">
+#version 300 es
+
+in  vec4 aPosition;
+in  vec4 aColor; // Not strictly used for shading, but kept for compatibility
+in  vec3 aNormal;
+out vec4 vColor;
+
+uniform vec3 uTheta;
+uniform mat4 uModelView;
+uniform mat4 uProjection;
+
+// Light Source Properties (I_a, I_d, I_s)
+uniform vec3 uLightPosition;
+uniform vec3 uAmbient;
+uniform vec3 uDiffuse;
+uniform vec3 uSpecular;
+
+// Material Properties (k_a, k_d, k_s, alpha)
+uniform vec3 uMaterialAmbient;
+uniform vec3 uMaterialDiffuse;
+uniform vec3 uMaterialSpecular;
+uniform float uMaterialShininess;
+
+void main()
+{
+    // Compute the sines and cosines of theta for each of
+    //   the three axes in one computation.
+    vec3 angles = radians(uTheta);
+    vec3 c = cos(angles);
+    vec3 s = sin(angles);
+
+    // Rotation matrices (column-major)
+    mat4 rx = mat4(1.0,  0.0,  0.0, 0.0,
+		    0.0,  c.x,  s.x, 0.0,
+		    0.0, -s.x,  c.x, 0.0,
+		    0.0,  0.0,  0.0, 1.0);
+
+    mat4 ry = mat4(c.y, 0.0, -s.y, 0.0,
+		    0.0, 1.0,  0.0, 0.0,
+		    s.y, 0.0,  c.y, 0.0,
+		    0.0, 0.0,  0.0, 1.0);
+
+
+    mat4 rz = mat4(c.z, s.z, 0.0, 0.0,
+		    -s.z,  c.z, 0.0, 0.0,
+		    0.0,  0.0, 1.0, 0.0,
+		    0.0,  0.0, 0.0, 1.0);
+
+    mat4 uRotation = rz * ry * rx;
+    
+    // Transform position to eye coordinates (apply model rotation then modelView)
+    vec4 eyePosition = uModelView * uRotation * aPosition;
+
+    // Compute normal matrix (modelView * rotation) and transform normal
+    mat3 normalMatrix = mat3(uModelView * uRotation);
+    vec3 N = normalize(normalMatrix * aNormal);
+
+    // Light position in eye coordinates
+    vec3 lightEye = (uModelView * vec4(uLightPosition, 1.0)).xyz;
+    vec3 L = normalize(lightEye - eyePosition.xyz);
+
+    // View vector (camera at origin in eye coords)
+    vec3 V = normalize(-eyePosition.xyz); 
+    
+    // Reflection vector
+    vec3 R = reflect(-L, N);
+
+    // Diffuse component (Lambertian)
+    float lambert = max(dot(N, L), 0.0);
+    
+    // Specular component
+    float spec = 0.0;
+    if (lambert > 0.0) spec = pow(max(dot(R, V), 0.0), uMaterialShininess); // Use Material Shininess
+
+    // Phong Illumination Model Calculation (I = k_a*I_a + k_d*I_d*(L.N) + k_s*I_s*(V.R)^alpha)
+    vec3 ambient = uMaterialAmbient * uAmbient;
+    vec3 diffuse = uMaterialDiffuse * uDiffuse * lambert;
+    vec3 specular = uMaterialSpecular * uSpecular * spec;
+
+    // Final color (using aPosition.a for alpha since aColor is now the material)
+    vColor = vec4(ambient + diffuse + specular, aPosition.w); 
+    gl_Position = uProjection * eyePosition;
+}
+</script>
+
+<script id="fragment-shader" type="x-shader/x-fragment">
+#version 300 es
+
+precision mediump float;
+
+in vec4 vColor;
+out vec4 fColor;
+
+void
+main()
+{
+    fColor = vColor;
+}
+</script>
+
+<script src="Common/initShaders.js"></script>
+<script src="Common/MVnew.js"></script>
+<script src="main.js"></script>
+</body>
+</html>
