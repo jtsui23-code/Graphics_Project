@@ -31,7 +31,18 @@ var material = {
     shininess: 27.8
 };
 
-init("sphere");
+// Helper: transform an array of `vec4` positions by scale [sx,sy,sz] and offset [x,y,z]
+function transformPositions(posArray, offset, scale) {
+    var out = [];
+    for (var i = 0; i < posArray.length; i++) {
+        var p = posArray[i];
+        out.push(vec4(p[0] * scale[0] + offset[0], p[1] * scale[1] + offset[1], p[2] * scale[2] + offset[2], p[3]));
+    }
+    return out;
+}
+
+// Start with a WALL·E-like robot scene by default
+init("wally");
 
 function init(picture)
 {
@@ -62,9 +73,55 @@ function init(picture)
         shape = drawSphere(3); // New shape
     }
     
-    positions = shape.positions;
-    colors = shape.colors;
-    numPositions = shape.numVertices;
+    // New: construct a WALL·E-like robot from primitives
+    if (picture == "wally") {
+        // body (slightly rectangular cube)
+        var body = drawCube();
+        var bodyPos = transformPositions(body.positions, [0.0, 0.0, 0.0], [1.2, 0.7, 0.7]);
+
+        // head (small cube sitting on top)
+        var head = drawCube();
+        var headPos = transformPositions(head.positions, [0.0, 0.9, 0.0], [0.5, 0.4, 0.5]);
+
+        // eyes (two small spheres)
+        var eye = drawSphere(2);
+        var leftEyePos = transformPositions(eye.positions, [-0.18, 1.05, 0.35], [0.15,0.15,0.15]);
+        var rightEyePos = transformPositions(eye.positions, [0.18, 1.05, 0.35], [0.15,0.15,0.15]);
+
+        // arms (thin long cubes)
+        var arm = drawCube();
+        var leftArmPos = transformPositions(arm.positions, [-0.95, 0.1, 0.0], [0.25,0.25,0.6]);
+        var rightArmPos = transformPositions(arm.positions, [0.95, 0.1, 0.0], [0.25,0.25,0.6]);
+
+        // treads: flattened cubes left and right
+        var tread = drawCube();
+        var leftTreadPos = transformPositions(tread.positions, [-0.6, -0.65, 0.0], [0.5,0.15,0.9]);
+        var rightTreadPos = transformPositions(tread.positions, [0.6, -0.65, 0.0], [0.5,0.15,0.9]);
+
+        // concatenate positions and colors (use original colors arrays for each part)
+        positions = [].concat(
+            bodyPos,
+            headPos,
+            leftEyePos, rightEyePos,
+            leftArmPos, rightArmPos,
+            leftTreadPos, rightTreadPos
+        );
+
+        colors = [].concat(
+            body.colors,
+            head.colors,
+            eye.colors, eye.colors,
+            arm.colors, arm.colors,
+            tread.colors, tread.colors
+        );
+
+        numPositions = positions.length;
+    }
+    else {
+        positions = shape.positions;
+        colors = shape.colors;
+        numPositions = shape.numVertices;
+    }
 
     // Compute per-triangle normals (flat shading) and upload later
     normals = [];
@@ -172,6 +229,7 @@ function init(picture)
         document.addEventListener('keydown', function(event) {
             var key = event.key;
             switch(key) {
+                case '9': init("wally"); break;
                 case '1': init("tetrahedron"); break;
                 case '2': init("cube"); break;
                 case '3': init("octahedron"); break;
