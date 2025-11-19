@@ -7,6 +7,7 @@ var numPositions;
 
 var positions = [];
 var colors = [];
+var normals = [];
 
 var xAxis = 0;
 var yAxis = 1;
@@ -20,6 +21,15 @@ var projectionLoc;
 var modelViewLoc;
 var speed = 2.0;
 var handlersAdded = false; // Flag to ensure listeners are added once
+var animFrameId = null;
+
+// Default material (Brass-like)
+var material = {
+    ambient: vec3(0.33, 0.22, 0.03),
+    diffuse: vec3(0.78, 0.57, 0.11),
+    specular: vec3(0.99, 0.94, 0.81),
+    shininess: 27.8
+};
 
 init("sphere");
 
@@ -56,6 +66,23 @@ function init(picture)
     colors = shape.colors;
     numPositions = shape.numVertices;
 
+    // Compute per-triangle normals (flat shading) and upload later
+    normals = [];
+    function sub(a, b) { return [a[0]-b[0], a[1]-b[1], a[2]-b[2]]; }
+    function cross(a, b) { return [a[1]*b[2]-a[2]*b[1], a[2]*b[0]-a[0]*b[2], a[0]*b[1]-a[1]*b[0]]; }
+    function normalize(v) { var L = Math.hypot(v[0], v[1], v[2]); return L===0?[0,0,0]:[v[0]/L, v[1]/L, v[2]/L]; }
+    for (var i = 0; i < positions.length; i += 3) {
+        var p1 = positions[i];
+        var p2 = positions[i+1];
+        var p3 = positions[i+2];
+        var v1 = sub(p2, p1);
+        var v2 = sub(p3, p1);
+        var n = normalize(cross(v1, v2));
+        normals.push(vec3(n[0], n[1], n[2]));
+        normals.push(vec3(n[0], n[1], n[2]));
+        normals.push(vec3(n[0], n[1], n[2]));
+    }
+
     gl.viewport(0, 0, canvas.width, canvas.height);
     gl.clearColor(1.0, 1.0, 1.0, 1.0);
 
@@ -84,6 +111,16 @@ function init(picture)
     gl.vertexAttribPointer(positionLoc, 4, gl.FLOAT, false, 0, 0);
     gl.enableVertexAttribArray(positionLoc);
 
+    // Normal buffer (provide aNormal to the shader)
+    var nBuffer = gl.createBuffer();
+    gl.bindBuffer(gl.ARRAY_BUFFER, nBuffer);
+    gl.bufferData(gl.ARRAY_BUFFER, flatten(normals), gl.STATIC_DRAW);
+    var normalLoc = gl.getAttribLocation(program, "aNormal");
+    if (normalLoc !== -1) {
+        gl.vertexAttribPointer(normalLoc, 3, gl.FLOAT, false, 0, 0);
+        gl.enableVertexAttribArray(normalLoc);
+    }
+
     thetaLoc = gl.getUniformLocation(program, "uTheta");
     
     // Set up projection matrix (perspective view)
@@ -96,6 +133,27 @@ function init(picture)
     modelViewLoc = gl.getUniformLocation(program, "uModelView");
     var modelView = lookAt(vec3(0, 0, 5), vec3(0, 0, 0), vec3(0, 1, 0));
     gl.uniformMatrix4fv(modelViewLoc, false, flatten(modelView));
+
+    // Lighting uniforms (if shader expects them)
+    var lightPosLoc = gl.getUniformLocation(program, "uLightPosition");
+    var ambientLoc = gl.getUniformLocation(program, "uAmbient");
+    var diffuseLoc = gl.getUniformLocation(program, "uDiffuse");
+    var specularLoc = gl.getUniformLocation(program, "uSpecular");
+
+    var matAmbLoc = gl.getUniformLocation(program, "uMaterialAmbient");
+    var matDiffLoc = gl.getUniformLocation(program, "uMaterialDiffuse");
+    var matSpecLoc = gl.getUniformLocation(program, "uMaterialSpecular");
+    var matShineLoc = gl.getUniformLocation(program, "uMaterialShininess");
+
+    if (lightPosLoc) gl.uniform3f(lightPosLoc, 2.0, 2.0, 2.0);
+    if (ambientLoc) gl.uniform3f(ambientLoc, 0.2, 0.2, 0.2);
+    if (diffuseLoc) gl.uniform3f(diffuseLoc, 1.0, 1.0, 1.0);
+    if (specularLoc) gl.uniform3f(specularLoc, 1.0, 1.0, 1.0);
+
+    if (matAmbLoc) gl.uniform3fv(matAmbLoc, material.ambient);
+    if (matDiffLoc) gl.uniform3fv(matDiffLoc, material.diffuse);
+    if (matSpecLoc) gl.uniform3fv(matSpecLoc, material.specular);
+    if (matShineLoc) gl.uniform1f(matShineLoc, material.shininess);
 
     // Event Listeners (add only once)
     if (!handlersAdded) {
@@ -127,6 +185,11 @@ function init(picture)
         handlersAdded = true;
     }
 
+    // Cancel any previous animation loop before starting a new one
+    if (animFrameId) {
+        cancelAnimationFrame(animFrameId);
+        animFrameId = null;
+    }
     render();
 }
 
@@ -462,5 +525,5 @@ function render()
     gl.uniform3fv(thetaLoc, theta);
 
     gl.drawArrays(gl.TRIANGLES, 0, numPositions);
-    requestAnimationFrame(render);
+    animFrameId = requestAnimationFrame(render);
 }
