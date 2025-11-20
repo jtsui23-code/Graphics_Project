@@ -19,7 +19,7 @@ var theta = [0, 0, 0];
 var thetaLoc;
 var projectionLoc;
 var modelViewLoc;
-var speed = 2.0;
+var speed = 1.0;
 var handlersAdded = false; // Flag to ensure listeners are added once
 var animFrameId = null;
 
@@ -42,7 +42,7 @@ function transformPositions(posArray, offset, scale) {
 }
 
 // Start with a WALL·E-like robot scene by default
-init("wally");
+init("wallyE");
 
 function init(picture)
 {
@@ -74,7 +74,7 @@ function init(picture)
     }
     
     // New: construct a WALL·E-like robot from primitives
-    if (picture == "wally") {
+    if (picture == "wallyE") {
         // body (slightly rectangular cube)
         var body = drawCube();
         var bodyPos = transformPositions(body.positions, [0.0, 0.0, 0.0], [1.2, 0.7, 0.7]);
@@ -141,7 +141,7 @@ function init(picture)
     }
 
     gl.viewport(0, 0, canvas.width, canvas.height);
-    gl.clearColor(1.0, 1.0, 1.0, 1.0);
+    gl.clearColor(0.0, 0.0, 0.0, 1.0);
 
     gl.enable(gl.DEPTH_TEST);
 
@@ -229,7 +229,7 @@ function init(picture)
         document.addEventListener('keydown', function(event) {
             var key = event.key;
             switch(key) {
-                case '9': init("wally"); break;
+                case '9': init("wallyE"); break;
                 case '1': init("tetrahedron"); break;
                 case '2': init("cube"); break;
                 case '3': init("octahedron"); break;
@@ -577,6 +577,7 @@ function drawSphere(subdivisions) {
 
 function render()
 {
+
     gl.clear( gl.COLOR_BUFFER_BIT | gl.DEPTH_BUFFER_BIT);
 
     theta[axis] += speed;
