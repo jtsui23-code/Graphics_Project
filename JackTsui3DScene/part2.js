@@ -20,7 +20,7 @@ var projectionLoc;
 var modelViewLoc;
 var speed = 2.0;
 
-init("sphere");
+init("icosahedron");
 
 function init(picture)
 {
